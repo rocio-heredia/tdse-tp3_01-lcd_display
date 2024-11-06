@@ -56,8 +56,8 @@
 
 #define DISPLAY_PIN_A_PCF8574 3
 
-#define I2C1_SDA PB_9
-#define I2C1_SCL PB_8
+//#define I2C1_SDA PB_9
+//#define I2C1_SCL PB_8
 
 #define PCF8574_I2C_BUS_8BIT_WRITE_ADDRESS 78
 
@@ -78,18 +78,39 @@ typedef struct{
 
 //=====[Declaration and initialization of public global objects]===============
 
-DigitalOut displayD0( D2 );
-DigitalOut displayD1( D4 );
-DigitalOut displayD2( D5 );
-DigitalOut displayD3( D6 );
-DigitalOut displayD4( D7 );
-DigitalOut displayD5( D8 );
-DigitalOut displayD6( D9 );
-DigitalOut displayD7( D10 );
-DigitalOut displayRs( D11 );
-DigitalOut displayEn( D12 );
+//DigitalOut displayD0( D2 );
+#define D2_GPIO_Pin GPIO_PIN_10
+#define D2_GPIO_Port GPIOA
+//DigitalOut displayD1( D4 );
+#define D4_GPIO_Pin GPIO_PIN_5
+#define D4_GPIO_Port GPIOB
+//DigitalOut displayD2( D5 );
+#define D5_GPIO_Pin GPIO_PIN_4
+#define D5_GPIO_Port GPIOB
+//DigitalOut displayD3( D6 );
+#define D6_GPIO_Pin GPIO_PIN_10
+#define D6_GPIO_Port GPIOB
+//DigitalOut displayD4( D7 );
+#define D7_GPIO_Pin GPIO_PIN_8
+#define D7_GPIO_Port GPIOA
+//DigitalOut displayD5( D8 );
+#define D8_GPIO_Pin GPIO_PIN_9
+#define D8_GPIO_Port GPIOA
+//DigitalOut displayD6( D9 );
+#define D9_GPIO_Pin GPIO_PIN_7
+#define D9_GPIO_Port GPIOC
+//DigitalOut displayD7( D10 );
+#define D10_GPIO_Pin GPIO_PIN_6
+#define D10_GPIO_Port GPIOB
+//DigitalOut displayRs( D11 );
+#define D11_GPIO_Pin GPIO_PIN_7
+#define D11_GPIO_Port GPIOA
+//DigitalOut displayEn( D12 );
+#define D12_GPIO_Pin GPIO_PIN_6
+#define D12_GPIO_Port GPIOA
 
-I2C i2cPcf8574( I2C1_SDA, I2C1_SCL ); 
+I2C_HandleTypeDef hi2c1;
+//I2C i2cPcf8574( I2C1_SDA, I2C1_SCL ); 
 
 //=====[Declaration of external public global variables]=======================
 
@@ -111,12 +132,16 @@ static void displayCodeWrite( bool type, uint8_t dataBus );
 
 void displayInit( displayConnection_t connection )
 {
+
+    hi2c1.Instance = I2C1;
+
     display.connection = connection;
     
     if( display.connection == DISPLAY_CONNECTION_I2C_PCF8574_IO_EXPANDER) {
         pcf8574.address = PCF8574_I2C_BUS_8BIT_WRITE_ADDRESS;
         pcf8574.data = 0b00000000;
-        i2cPcf8574.frequency(100000);
+        //i2cPcf8574.frequency(100000);
+        hi2c1.Init.ClockSpeed = 100000;
         displayPinWrite( DISPLAY_PIN_A_PCF8574,  ON );
     } 
     
@@ -253,57 +278,132 @@ static void displayPinWrite( uint8_t pinName, int value )
     switch( display.connection ) {
         case DISPLAY_CONNECTION_GPIO_8BITS:
             switch( pinName ) {
-                case DISPLAY_PIN_D0: displayD0 = value;   break;
-                case DISPLAY_PIN_D1: displayD1 = value;   break;
-                case DISPLAY_PIN_D2: displayD2 = value;   break;
-                case DISPLAY_PIN_D3: displayD3 = value;   break;
-                case DISPLAY_PIN_D4: displayD4 = value;   break;
-                case DISPLAY_PIN_D5: displayD5 = value;   break;
-                case DISPLAY_PIN_D6: displayD6 = value;   break;
-                case DISPLAY_PIN_D7: displayD7 = value;   break;
-                case DISPLAY_PIN_RS: displayRs = value;   break;
-                case DISPLAY_PIN_EN: displayEn = value;   break;
-                case DISPLAY_PIN_RW: break; 
-                default: break;
+                case DISPLAY_PIN_D0: 
+                /*displayD0 = value;
+                HAL_GPIO_WritePin(GPIOx,GPIO_Pin_x,PinState)*/
+
+                HAL_GPIO_WritePin((GPIO_TypeDef*)D2_GPIO_Port,(uint16_t)D2_GPIO_Pin,(GPIO_PinState)value);
+
+                break;
+                case DISPLAY_PIN_D1: 
+                HAL_GPIO_WritePin((GPIO_TypeDef*)D4_GPIO_Port,(uint16_t)D4_GPIO_Pin,(GPIO_PinState)value); 
+                break;
+                case DISPLAY_PIN_D2: 
+                HAL_GPIO_WritePin((GPIO_TypeDef*)D5_GPIO_Port,(uint16_t)D5_GPIO_Pin,(GPIO_PinState)value);   
+                break;
+                case DISPLAY_PIN_D3: 
+                HAL_GPIO_WritePin((GPIO_TypeDef*)D6_GPIO_Port,(uint16_t)D6_GPIO_Pin,(GPIO_PinState)value);
+                break;
+                case DISPLAY_PIN_D4: 
+                HAL_GPIO_WritePin((GPIO_TypeDef*)D7_GPIO_Port,(uint16_t)D7_GPIO_Pin,(GPIO_PinState)value);  
+                break;
+                case DISPLAY_PIN_D5: 
+                HAL_GPIO_WritePin((GPIO_TypeDef*)D8_GPIO_Port,(uint16_t)D8_GPIO_Pin,(GPIO_PinState)value);   
+                break;
+                case DISPLAY_PIN_D6: 
+                HAL_GPIO_WritePin((GPIO_TypeDef*)D9_GPIO_Port,(uint16_t)D9_GPIO_Pin,(GPIO_PinState)value);  
+                break;
+                case DISPLAY_PIN_D7: 
+                HAL_GPIO_WritePin((GPIO_TypeDef*)D10_GPIO_Port,(uint16_t)D10_GPIO_Pin,(GPIO_PinState)value);   
+                break;
+                case DISPLAY_PIN_RS: 
+                HAL_GPIO_WritePin((GPIO_TypeDef*)D11_GPIO_Port,(uint16_t)D11_GPIO_Pin,(GPIO_PinState)value);  
+                break;
+                case DISPLAY_PIN_EN: 
+                HAL_GPIO_WritePin((GPIO_TypeDef*)D12_GPIO_Port,(uint16_t)D12_GPIO_Pin,(GPIO_PinState)value);
+                break;
+                case DISPLAY_PIN_RW: 
+                break; 
+                default: 
+                break;
             }
             break;
         case DISPLAY_CONNECTION_GPIO_4BITS:
             switch( pinName ) {
-                case DISPLAY_PIN_D4: displayD4 = value;   break;
-                case DISPLAY_PIN_D5: displayD5 = value;   break;
-                case DISPLAY_PIN_D6: displayD6 = value;   break;
-                case DISPLAY_PIN_D7: displayD7 = value;   break;
-                case DISPLAY_PIN_RS: displayRs = value;   break;
-                case DISPLAY_PIN_EN: displayEn = value;   break;
-                case DISPLAY_PIN_RW: break; 
-                default: break;
+                case DISPLAY_PIN_D4: 
+                HAL_GPIO_WritePin((GPIO_TypeDef*)D7_GPIO_Port,(uint16_t)D7_GPIO_Pin,(GPIO_PinState)value);  
+                break;
+                case DISPLAY_PIN_D5: 
+                HAL_GPIO_WritePin((GPIO_TypeDef*)D8_GPIO_Port,(uint16_t)D8_GPIO_Pin,(GPIO_PinState)value);   
+                break;
+                case DISPLAY_PIN_D6: 
+                HAL_GPIO_WritePin((GPIO_TypeDef*)D9_GPIO_Port,(uint16_t)D9_GPIO_Pin,(GPIO_PinState)value);  
+                break;
+                case DISPLAY_PIN_D7: 
+                HAL_GPIO_WritePin((GPIO_TypeDef*)D10_GPIO_Port,(uint16_t)D10_GPIO_Pin,(GPIO_PinState)value);   
+                break;
+                case DISPLAY_PIN_RS: 
+                HAL_GPIO_WritePin((GPIO_TypeDef*)D11_GPIO_Port,(uint16_t)D11_GPIO_Pin,(GPIO_PinState)value);  
+                break;
+                case DISPLAY_PIN_EN: 
+                HAL_GPIO_WritePin((GPIO_TypeDef*)D12_GPIO_Port,(uint16_t)D12_GPIO_Pin,(GPIO_PinState)value);
+                break;
+                case DISPLAY_PIN_RW: 
+                break; 
+                default: 
+                break;
             }
             break;
+ 
         case DISPLAY_CONNECTION_I2C_PCF8574_IO_EXPANDER:
             if ( value ) {
                 switch( pinName ) {
-                    case DISPLAY_PIN_D4: pcf8574.displayPinD4 = ON; break;
-                    case DISPLAY_PIN_D5: pcf8574.displayPinD5 = ON; break;
-                    case DISPLAY_PIN_D6: pcf8574.displayPinD6 = ON; break;
-                    case DISPLAY_PIN_D7: pcf8574.displayPinD7 = ON; break;
-                    case DISPLAY_PIN_RS: pcf8574.displayPinRs = ON; break;
-                    case DISPLAY_PIN_EN: pcf8574.displayPinEn = ON; break;
-                    case DISPLAY_PIN_RW: pcf8574.displayPinRw = ON; break;
-                    case DISPLAY_PIN_A_PCF8574: pcf8574.displayPinA = ON; break;
-                    default: break;
+                    case DISPLAY_PIN_D4: 
+                    pcf8574.displayPinD4 = ON; 
+                    break;
+                    case DISPLAY_PIN_D5: 
+                    pcf8574.displayPinD5 = ON; 
+                    break;
+                    case DISPLAY_PIN_D6: 
+                    pcf8574.displayPinD6 = ON; 
+                    break;
+                    case DISPLAY_PIN_D7: 
+                    pcf8574.displayPinD7 = ON; 
+                    break;
+                    case DISPLAY_PIN_RS: 
+                    pcf8574.displayPinRs = ON; 
+                    break;
+                    case DISPLAY_PIN_EN: 
+                    pcf8574.displayPinEn = ON; 
+                    break;
+                    case DISPLAY_PIN_RW: 
+                    pcf8574.displayPinRw = ON; 
+                    break;
+                    case DISPLAY_PIN_A_PCF8574: 
+                    pcf8574.displayPinA = ON; 
+                    break;
+                    default: 
+                    break;
                 }
             }
             else {
                 switch( pinName ) {
-                    case DISPLAY_PIN_D4: pcf8574.displayPinD4 = OFF; break;
-                    case DISPLAY_PIN_D5: pcf8574.displayPinD5 = OFF; break;
-                    case DISPLAY_PIN_D6: pcf8574.displayPinD6 = OFF; break;
-                    case DISPLAY_PIN_D7: pcf8574.displayPinD7 = OFF; break;
-                    case DISPLAY_PIN_RS: pcf8574.displayPinRs = OFF; break;
-                    case DISPLAY_PIN_EN: pcf8574.displayPinEn = OFF; break;
-                    case DISPLAY_PIN_RW: pcf8574.displayPinRw = OFF; break;
-                    case DISPLAY_PIN_A_PCF8574: pcf8574.displayPinA = OFF; break;
-                    default: break;
+                    case DISPLAY_PIN_D4: 
+                    pcf8574.displayPinD4 = OFF; 
+                    break;
+                    case DISPLAY_PIN_D5: 
+                    pcf8574.displayPinD5 = OFF; 
+                    break;
+                    case DISPLAY_PIN_D6: 
+                    pcf8574.displayPinD6 = OFF; 
+                    break;
+                    case DISPLAY_PIN_D7: 
+                    pcf8574.displayPinD7 = OFF; 
+                    break;
+                    case DISPLAY_PIN_RS: 
+                    pcf8574.displayPinRs = OFF; 
+                    break;
+                    case DISPLAY_PIN_EN: 
+                    pcf8574.displayPinEn = OFF; 
+                    break;
+                    case DISPLAY_PIN_RW: 
+                    pcf8574.displayPinRw = OFF; 
+                    break;
+                    case DISPLAY_PIN_A_PCF8574: 
+                    pcf8574.displayPinA = OFF; 
+                    break;
+                    default: 
+                    break;
                 }
             }     
             pcf8574.data = 0b00000000;
@@ -315,7 +415,9 @@ static void displayPinWrite( uint8_t pinName, int value )
             if ( pcf8574.displayPinD5 ) pcf8574.data |= 0b00100000; 
             if ( pcf8574.displayPinD6 ) pcf8574.data |= 0b01000000; 
             if ( pcf8574.displayPinD7 ) pcf8574.data |= 0b10000000; 
-            i2cPcf8574.write( pcf8574.address, &pcf8574.data, 1);
+
+            HAL_I2C_Master_Transmit((I2C_HandleTypeDef *)&hi2c1, (uint16_t)pcf8574.address, (uint8_t *)&pcf8574.data, (uint16_t)16, (uint32_t)HAL_MAX_DELAY);
+            //i2cPcf8574.write( pcf8574.address, &pcf8574.data, 1);
             break;    
     }
 }
