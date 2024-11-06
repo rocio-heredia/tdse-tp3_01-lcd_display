@@ -11,14 +11,6 @@
 
 void userInterfaceInit();
 void userInterfaceUpdate();
-bool userInterfaceCodeCompleteRead();
-void userInterfaceCodeCompleteWrite( bool state );
-
-bool incorrectCodeStateRead();
-void incorrectCodeStateWrite( bool state );
-
-bool systemBlockedStateRead();
-void systemBlockedStateWrite( bool state );
 
 //=====[#include guards - end]=================================================
 
