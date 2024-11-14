@@ -30,7 +30,7 @@ void smartHomeSystemInit()
 void smartHomeSystemUpdate()
 {
     userInterfaceUpdate();
-    delay(SYSTEM_TIME_INCREMENT_MS);
+    HAL_Delay(SYSTEM_TIME_INCREMENT_MS);
 }
 
 //=====[Implementations of private functions]==================================
