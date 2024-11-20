@@ -1,15 +1,16 @@
 //=====[Libraries]=============================================================
 
-#include "smart_home_system.h"
 #include "mbed.h"
+#include "display.h"
 
 //=====[Main function, the program entry point after power on or reset]========
 
 int main()
 {
     printf("%s\n", "Hello World");
-    smartHomeSystemInit();
+    userInterfaceDisplayInit();
     while (true) {
-        smartHomeSystemUpdate();
+        userInterfaceDisplayUpdate();
+        HAL_Delay(SYSTEM_TIME_INCREMENT_MS);
     }
 }

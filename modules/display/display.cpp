@@ -4,7 +4,9 @@
 #include "arm_book_lib.h"
 #include "display.h"
 
-//=====[Declaration of private defines]========================================
+//=====[Declaration of private data types]=====================================
+
+#define DISPLAY_REFRESH_TIME_MS 1000
 
 #define DISPLAY_IR_CLEAR_DISPLAY   0b00000001
 #define DISPLAY_IR_ENTRY_MODE_SET  0b00000100
@@ -54,63 +56,7 @@
 #define DISPLAY_PIN_D6 13 
 #define DISPLAY_PIN_D7 14 
 
-#define DISPLAY_PIN_A_PCF8574 3
-
-//#define I2C1_SDA PB_9
-//#define I2C1_SCL PB_8
-
-#define PCF8574_I2C_BUS_8BIT_WRITE_ADDRESS 78
-
-//=====[Declaration of private data types]=====================================
-
-typedef struct{
-    int address;
-    char data;
-    bool displayPinRs;
-    bool displayPinRw; 
-    bool displayPinEn;
-    bool displayPinA;
-    bool displayPinD4;
-    bool displayPinD5;
-    bool displayPinD6;
-    bool displayPinD7;
-} pcf8574_t;
-
 //=====[Declaration and initialization of public global objects]===============
-
-//DigitalOut displayD0( D2 );
-#define D2_GPIO_Pin GPIO_PIN_10
-#define D2_GPIO_Port GPIOA
-//DigitalOut displayD1( D4 );
-#define D4_GPIO_Pin GPIO_PIN_5
-#define D4_GPIO_Port GPIOB
-//DigitalOut displayD2( D5 );
-#define D5_GPIO_Pin GPIO_PIN_4
-#define D5_GPIO_Port GPIOB
-//DigitalOut displayD3( D6 );
-#define D6_GPIO_Pin GPIO_PIN_10
-#define D6_GPIO_Port GPIOB
-//DigitalOut displayD4( D7 );
-#define D7_GPIO_Pin GPIO_PIN_8
-#define D7_GPIO_Port GPIOA
-//DigitalOut displayD5( D8 );
-#define D8_GPIO_Pin GPIO_PIN_9
-#define D8_GPIO_Port GPIOA
-//DigitalOut displayD6( D9 );
-#define D9_GPIO_Pin GPIO_PIN_7
-#define D9_GPIO_Port GPIOC
-//DigitalOut displayD7( D10 );
-#define D10_GPIO_Pin GPIO_PIN_6
-#define D10_GPIO_Port GPIOB
-//DigitalOut displayRs( D11 );
-#define D11_GPIO_Pin GPIO_PIN_7
-#define D11_GPIO_Port GPIOA
-//DigitalOut displayEn( D12 );
-#define D12_GPIO_Pin GPIO_PIN_6
-#define D12_GPIO_Port GPIOA
-
-//I2C_HandleTypeDef hi2c1;
-//I2C i2cPcf8574( I2C1_SDA, I2C1_SCL ); 
 
 //=====[Declaration of external public global variables]=======================
 
@@ -119,7 +65,6 @@ typedef struct{
 //=====[Declaration and initialization of private global variables]============
 
 static display_t display;
-static pcf8574_t pcf8574;
 static bool initial8BitCommunicationIsCompleted;
 
 //=====[Declarations (prototypes) of private functions]========================
@@ -132,18 +77,7 @@ static void displayCodeWrite( bool type, uint8_t dataBus );
 
 void displayInit( displayConnection_t connection )
 {
-
-    //hi2c1.Instance = I2C1;
-
     display.connection = connection;
-    
-    if( display.connection == DISPLAY_CONNECTION_I2C_PCF8574_IO_EXPANDER) {
-        pcf8574.address = PCF8574_I2C_BUS_8BIT_WRITE_ADDRESS;
-        pcf8574.data = 0b00000000;
-        //i2cPcf8574.frequency(100000);
-        //hi2c1.Init.ClockSpeed = 100000;
-        displayPinWrite( DISPLAY_PIN_A_PCF8574,  ON );
-    } 
     
     initial8BitCommunicationIsCompleted = false;    
 
@@ -175,7 +109,6 @@ void displayInit( displayConnection_t connection )
         break;
         
         case DISPLAY_CONNECTION_GPIO_4BITS:
-        case DISPLAY_CONNECTION_I2C_PCF8574_IO_EXPANDER:
             displayCodeWrite( DISPLAY_RS_INSTRUCTION, 
                               DISPLAY_IR_FUNCTION_SET | 
                               DISPLAY_IR_FUNCTION_SET_4BITS );
@@ -263,12 +196,57 @@ void displayStringWrite( const char * str )
 
 //=====[Implementations of private functions]==================================
 
+void userInterfaceDisplayInit()
+{
+    #if (TEST_X == TEST_0)
+
+    displayInit( DISPLAY_CONNECTION_GPIO_8BITS );
+
+    #endif
+
+    #if (TEST_X == TEST_1)
+
+    displayInit( DISPLAY_CONNECTION_GPIO_4BITS );
+
+    #endif
+     
+    displayCharPositionWrite ( 0,0 );
+    displayStringWrite( "Temperature:" );
+}
+
+uint32_t contador = 0;
+
+void userInterfaceDisplayUpdate()
+{
+    static int accumulatedDisplayTime = 0;
+    char temperatureString[3] = "";
+    
+    if( accumulatedDisplayTime >=
+        DISPLAY_REFRESH_TIME_MS ) {
+
+        accumulatedDisplayTime = 0;
+
+        sprintf(temperatureString, "%.0u", contador++);
+        displayCharPositionWrite ( 12,0 );
+        displayStringWrite( temperatureString );
+        displayCharPositionWrite ( 14,0 );
+        displayStringWrite( "'C" );
+
+    } else {
+        accumulatedDisplayTime =
+            accumulatedDisplayTime + SYSTEM_TIME_INCREMENT_MS;        
+    } 
+}
+
 static void displayCodeWrite( bool type, uint8_t dataBus )
 {
-    if ( type == DISPLAY_RS_INSTRUCTION )
+    if ( type == DISPLAY_RS_INSTRUCTION ) {
         displayPinWrite( DISPLAY_PIN_RS, DISPLAY_RS_INSTRUCTION);
-    else 
+    }
+    else {
         displayPinWrite( DISPLAY_PIN_RS, DISPLAY_RS_DATA);
+        printf("%s\n", "Hello World");
+    }
     displayPinWrite( DISPLAY_PIN_RW, DISPLAY_RW_WRITE );
     displayDataBusWrite( dataBus );
 }
@@ -279,11 +257,7 @@ static void displayPinWrite( uint8_t pinName, int value )
         case DISPLAY_CONNECTION_GPIO_8BITS:
             switch( pinName ) {
                 case DISPLAY_PIN_D0: 
-                /*displayD0 = value;
-                HAL_GPIO_WritePin(GPIOx,GPIO_Pin_x,PinState)*/
-
                 HAL_GPIO_WritePin((GPIO_TypeDef*)D2_GPIO_Port,(uint16_t)D2_GPIO_Pin,(GPIO_PinState)value);
-
                 break;
                 case DISPLAY_PIN_D1: 
                 HAL_GPIO_WritePin((GPIO_TypeDef*)D4_GPIO_Port,(uint16_t)D4_GPIO_Pin,(GPIO_PinState)value); 
@@ -344,81 +318,6 @@ static void displayPinWrite( uint8_t pinName, int value )
                 break;
             }
             break;
- 
-        case DISPLAY_CONNECTION_I2C_PCF8574_IO_EXPANDER:
-            if ( value ) {
-                switch( pinName ) {
-                    case DISPLAY_PIN_D4: 
-                    pcf8574.displayPinD4 = ON; 
-                    break;
-                    case DISPLAY_PIN_D5: 
-                    pcf8574.displayPinD5 = ON; 
-                    break;
-                    case DISPLAY_PIN_D6: 
-                    pcf8574.displayPinD6 = ON; 
-                    break;
-                    case DISPLAY_PIN_D7: 
-                    pcf8574.displayPinD7 = ON; 
-                    break;
-                    case DISPLAY_PIN_RS: 
-                    pcf8574.displayPinRs = ON; 
-                    break;
-                    case DISPLAY_PIN_EN: 
-                    pcf8574.displayPinEn = ON; 
-                    break;
-                    case DISPLAY_PIN_RW: 
-                    pcf8574.displayPinRw = ON; 
-                    break;
-                    case DISPLAY_PIN_A_PCF8574: 
-                    pcf8574.displayPinA = ON; 
-                    break;
-                    default: 
-                    break;
-                }
-            }
-            else {
-                switch( pinName ) {
-                    case DISPLAY_PIN_D4: 
-                    pcf8574.displayPinD4 = OFF; 
-                    break;
-                    case DISPLAY_PIN_D5: 
-                    pcf8574.displayPinD5 = OFF; 
-                    break;
-                    case DISPLAY_PIN_D6: 
-                    pcf8574.displayPinD6 = OFF; 
-                    break;
-                    case DISPLAY_PIN_D7: 
-                    pcf8574.displayPinD7 = OFF; 
-                    break;
-                    case DISPLAY_PIN_RS: 
-                    pcf8574.displayPinRs = OFF; 
-                    break;
-                    case DISPLAY_PIN_EN: 
-                    pcf8574.displayPinEn = OFF; 
-                    break;
-                    case DISPLAY_PIN_RW: 
-                    pcf8574.displayPinRw = OFF; 
-                    break;
-                    case DISPLAY_PIN_A_PCF8574: 
-                    pcf8574.displayPinA = OFF; 
-                    break;
-                    default: 
-                    break;
-                }
-            }     
-            pcf8574.data = 0b00000000;
-            if ( pcf8574.displayPinRs ) pcf8574.data |= 0b00000001; 
-            if ( pcf8574.displayPinRw ) pcf8574.data |= 0b00000010; 
-            if ( pcf8574.displayPinEn ) pcf8574.data |= 0b00000100; 
-            if ( pcf8574.displayPinA  ) pcf8574.data |= 0b00001000; 
-            if ( pcf8574.displayPinD4 ) pcf8574.data |= 0b00010000; 
-            if ( pcf8574.displayPinD5 ) pcf8574.data |= 0b00100000; 
-            if ( pcf8574.displayPinD6 ) pcf8574.data |= 0b01000000; 
-            if ( pcf8574.displayPinD7 ) pcf8574.data |= 0b10000000; 
-
-            //HAL_I2C_Master_Transmit((I2C_HandleTypeDef *)&hi2c1, (uint16_t)pcf8574.address, (uint8_t *)&pcf8574.data, (uint16_t)16, (uint32_t)HAL_MAX_HAL_Delay);
-            //i2cPcf8574.write( pcf8574.address, &pcf8574.data, 1);
-            break;    
     }
 }
 
@@ -429,6 +328,7 @@ static void displayDataBusWrite( uint8_t dataBus )
     displayPinWrite( DISPLAY_PIN_D6, dataBus & 0b01000000 );
     displayPinWrite( DISPLAY_PIN_D5, dataBus & 0b00100000 );
     displayPinWrite( DISPLAY_PIN_D4, dataBus & 0b00010000 );
+    
     switch( display.connection ) {
         case DISPLAY_CONNECTION_GPIO_8BITS:
             displayPinWrite( DISPLAY_PIN_D3, dataBus & 0b00001000 );
@@ -438,7 +338,6 @@ static void displayDataBusWrite( uint8_t dataBus )
         break; 
               
         case DISPLAY_CONNECTION_GPIO_4BITS:
-        case DISPLAY_CONNECTION_I2C_PCF8574_IO_EXPANDER:
             if ( initial8BitCommunicationIsCompleted == true) {
                 displayPinWrite( DISPLAY_PIN_EN, ON );         
                 HAL_Delay( 1 );
